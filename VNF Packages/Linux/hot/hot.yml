@@ -1,0 +1,70 @@
+heat_template_version: 2015-04-30
+
+description: Example template to deploy a PAN firewall and Linux server instances
+
+parameters:
+    cbam:
+        type: json
+
+resources:
+
+  allow_http_https_icmp_secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 80
+          port_range_max: 80
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 443
+          port_range_max: 443
+        - protocol: icmp
+          remote_ip_prefix: 0.0.0.0/0
+ 
+  Andrew_untrust_port:
+    type: OS::Neutron::Port
+    properties:
+        network: { get_param: [ cbam, externalConnectionPoints, Andrew_unTrust_ECP, networkId ] }
+        fixed_ips: 
+          - ip_address: { get_param: [ cbam, externalConnectionPoints, Andrew_unTrust_ECP, addresses, 0, ip] }    
+        security_groups: [{ get_resource: allow_http_https_icmp_secgroup }]
+      
+  Andrew_bootvolume:
+    type: OS::Cinder::Volume
+    properties:
+      size: 20
+      image: { get_param: [ cbam, resources, Andrew_instance, imageId ] }
+
+  Andrew_instance:
+    type: OS::Nova::Server
+    depends_on: [
+                Andrew_bootvolume
+                ]
+    properties:
+      image: { get_param: [ cbam, resources, Andrew_instance, imageId ] } #Refer to image from cbam.json, which generated with instantiate call
+      flavor: { get_param: [ cbam, resources, Andrew_instance, flavorId ] }
+      networks:
+        - port: { get_resource: Andrew_untrust_port }       
+      block_device_mapping: [{ device_name: "vda", volume_id : { get_resource : Andrew_bootvolume }, delete_on_termination : "true" }]
+      user_data_format: RAW
+      config_drive: true
+      personality:
+#        /config/init-cfg.txt: {get_file: "/root/PA/init-cfg.txt"}
+#        /config/init-cfg.txt: { get_file: "http://web_server_name_ip/pan_bs/init-cfg.txt" }
+#        /config/bootstrap.xml: {get_file: "/root/PA/bootstrap.xml"}
+#        /config/bootstrap.xml: { get_file: "http://web_server_name_ip/pan_bs/bootstrap.xml" }
+#        /license/authcodes: {get_file: "/opt/pan_bs/authcodes"}
+#        /license/authcodes: {get_file: "http://web_server_name_ip/pan_bs/authcodes"}
+
+outputs:
+  Andrew_name:
+    description: Name of the PAN firewall
+    value: { get_attr: [Andrew_instance, name] }
+  Andrew_external_ip:
+    description: Management IP address of the PAN firewall in mgmt network
+    value: { get_attr: [Andrew_instance, first_address] }
+#  server_name:
+#    description: Name of the server
+#    value: { get_attr: [server_instance, name] }

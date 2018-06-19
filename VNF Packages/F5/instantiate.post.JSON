@@ -1,0 +1,51 @@
+{
+    "apiVersion": 3.1,
+    "grantlessMode": true,
+    "computeResourceFlavours":[
+      {
+        "resourceId":"F5.medium",
+        "vnfdVirtualComputeDescId":"ve_compute"
+      }
+    ],
+    "softwareImages":[
+      {
+        "resourceId":"F5_Image",
+        "vnfdSoftwareImageId":"ve_image"
+      }
+    ],
+    "flavourId": "basic",
+    "extVirtualLinks": [
+	{
+        "extCps": [
+		{
+            "cpdId": "vnf_mgmt_ecp"
+        }],
+        "resourceId": "external_vlan_3130"
+    },
+	{
+        "extCps": [{
+            "cpdId": "vnf_insidenatNET_ecp"
+        }],
+        "resourceId": "provider-vlan3139"
+    },
+	{
+        "extCps": [{
+            "cpdId": "vnf_outsidenatNET_ecp"
+        }],
+        "resourceId": "provider-vlan3136"
+    }
+		],
+    "vims": [{
+        "id": "VIM-Telus-HLAB",
+        "vimInfoType": "OPENSTACK_V3_INFO",
+        "interfaceInfo": {
+          "endpoint": "https://172.18.130.20:13000/v3"
+        },
+        "accessInfo": {
+          "region": "regionOne",
+          "project": "paloalto",
+          "domain": "Default",
+          "username": "lsingh"
+        }
+      }]
+}

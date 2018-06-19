@@ -1,0 +1,135 @@
+tosca_definitions_version: tosca_simple_profile_for_nfv_1_0_0_nokia_3_2_0
+
+description: Simpliest applicaiton for training
+
+topology_template:
+    substitution_mappings:
+        node_type: tosca.nodes.nfv.VNF
+        properties:
+          provider: Telus
+          product_name: Andrew_Cirros
+          software_version: '8.0.3'
+          descriptor_id: Andrew-fixedip
+          descriptor_version: '2.0'
+          product_info_name: Cirros
+          product_info_description: Cirros image for public access
+          vnfm_info:
+            - CBAM
+          localization_languages:
+            - english
+          default_localization_language: english
+        requirements:
+          - virtual_link : [ Andrew_unTrust_ECP, external_virtual_link ]
+        capabilities:
+            deployment_flavour:
+              properties:
+                flavour_id: basic
+                description: ..
+                instantiation_levels:
+                  default:
+                    description: ..
+                    vdu_levels:
+                      AndrewVDU:
+                        number_of_instances: 1
+                default_instantiation_level_id: default
+                vdu_profile:
+                  AndrewVDU:
+                    min_number_of_instances: 1
+                    max_number_of_instances: 1
+            vnf:
+              properties:
+                modifiable_attributes:
+                    extensions:
+                      Andrew_volume_size: 
+                        default: "20"
+        interfaces:
+            Basic:
+              instantiate:
+              terminate:
+            
+            Healable:
+               heal:
+                 implementation: mistral-workbooks/common_workbook.yaml
+
+    node_templates:
+      AndrewVDU:
+        type: tosca.nodes.nfv.VDU
+        properties:
+          description: ..
+          configurable_properties:
+            additional_vnfc_configurable_properties: {}
+          boot_order:
+            - rootVolume
+        requirements:
+          - virtual_compute: AndrewCompute
+          - virtual_storage: rootVolume
+          - sw_image: AndrewSwImage
+
+      AndrewSwImage:
+        type: tosca.nodes.nfv.SwImage
+        properties:
+              name: cirros
+              version: 1.0
+              checksum: f8ab98ff5e73ebab884d80c9dc9c7290
+              container_format: BARE
+              sw_image: cirros.qcow2
+              operating_system: Linux
+              disk_format: QCOW2
+              min_disk: 0 GB
+              size: 0 GB
+
+      rootVolume:
+        type: tosca.nodes.nfv.VirtualStorage
+        properties:
+          type_of_storage: volume
+          size_of_storage: 20 GB
+        requirements:
+          - sw_image: AndrewSwImage
+      
+      AndrewCompute:
+        type: tosca.nodes.nfv.VirtualCompute
+        properties:
+          virtual_memory:
+              virtual_mem_size: 5 GB
+          virtual_cpu:
+              cpu_architecture: x86
+              num_virtual_cpu: 2
+              virtual_cpu_clock: 200 MHz
+
+      Andrew_unTrust_ECP:
+        type: tosca.nodes.nfv.ECP
+        properties:
+          layer_protocol: ipv4
+        requirements:
+          - internal_connection_point: Andrew_unTrust_ICP
+
+      Andrew_unTrust_ICP:
+        type: tosca.nodes.nfv.ICP
+        properties:
+          layer_protocol: ipv4
+        requirements:
+          - virtual_binding: AndrewVDU
+  
+    policies:
+        - auto_heal:
+            type: tosca.policies.nfv.OperationTrigger
+            properties:
+              Operation:heal
+              trigger:
+                implementation: mistral-workbooks/auto_heal_workbook.yaml
+        - heat_mapping:
+            type: tosca.policies.nfv.HeatMapping
+            properties:
+                template:
+                  hotPath: hot/
+                  main: hot.yml
+                static:
+                    vdus:
+                      AndrewVDU:
+                          - heatResource: Andrew_instance
+                            externalConnectionPoints:
+                              Andrew_unTrust_ECP:
+                                - Andrew_untrust_port                         
+                            virtualStorages:
+                              rootVolume: Andrew_bootvolume
+              

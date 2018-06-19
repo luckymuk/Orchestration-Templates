@@ -1,0 +1,22 @@
+---
+version: '2.0'
+
+name: auto_heal_workbook
+
+workflows:
+  auto_heal:
+    input:
+      - period
+    output:
+      trigger_operation: <% $.decision="doit" %>
+      operation_params:
+        additionalParams: {}
+      vnfm_api_version: "3.4"
+    output-on-error:
+      error_message: <% $.get(error_message, "Some problem happened scheduled workflow") %>
+
+    tasks:
+      decide_exectute_or_not:
+        action: std.noop
+        publish:
+          decision: "doit"

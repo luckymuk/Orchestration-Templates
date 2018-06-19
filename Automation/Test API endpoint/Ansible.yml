@@ -1,0 +1,21 @@
+---
+- hosts: 10.142.0.3
+  tasks:
+    - copy:
+        src: /tmp/main.go
+        dest: /home/ansible/main.go
+        owner: ansible
+        group: ansible
+        mode: 0644
+  
+    - name: Create executables from go  
+      command: "{{ item }}" 
+      with_items:
+        - wget https://dl.google.com/go/go1.10.2.linux-amd64.tar.gz
+          when: go1.10.2.linux-amd64.tar.gz.exists == False
+        - sudo tar -C /usr/local -xzf go1.10.2.linux-amd64.tar.gz
+        - sudo apt-get install git -y
+        - sudo /usr/local/go/bin/go get -v -u github.com/gorilla/mux
+        - sudo /usr/local/go/bin/go build main.go
+        - bg ./main
+        

@@ -1,0 +1,58 @@
+---
+version: '2.0'
+name: common_workbook
+
+workflows:
+  heal:
+    input:
+      - operationType
+      - operationParams
+    tasks:
+      heal_the_server:
+        workflow: heal_server
+        input:
+          operationType: <% $.operationType %>
+          operationParams: <% $.operationParams %>
+
+  heal_server:
+    input:
+      - operationType
+      - operationParams
+    tasks:
+      initialize:
+        workflow: cbam_initialize
+        publish:
+          operationExecution: <% task(initialize).result.operationExecution %>
+          vnfInventory: <% task(initialize).result.vnfInventory %>
+          originalResourceModel: <% task(initialize).result.originalResourceModel %>
+        publish-on-error:
+          operationExecution: <% task(initialize).result.operationExecution %>
+          vnfInventory: <% task(initialize).result.vnfInventory %>
+          error_message: <% task(initialize).result.error_message %>
+        on-success:
+          - rebuild_server
+        on-error:
+          - finalize-on-error
+
+      rebuild_server:
+        action: nova.servers_rebuild
+        input:
+          server: <% $.vnfInventory.resourceModel.resources.trainingServer.physical_resource_id %>
+          image: <% $.vnfInventory.resourceModel.resources.trainingServer.attributes.image.id %>
+        publish-on-error:
+          error_message: <% task(rebuild_server).result %>
+        on-success:
+          - finalize
+        on-error:
+          - finalize-on-error
+
+      finalize:
+        workflow: cbam_finalize
+        input:
+          status: finished
+
+      finalize-on-error:
+        workflow: cbam_finalize
+        input:
+          status: failed
+          error_message: <% $.error_message %>

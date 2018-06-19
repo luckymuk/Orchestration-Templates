@@ -1,0 +1,42 @@
+{
+    "apiVersion": 3.1,
+    "grantlessMode": true,
+    "computeResourceFlavours":[
+      {
+        "resourceId":"1C_64G-M_0D",
+        "vnfdVirtualComputeDescId":"trainingCompute"
+      }
+    ],
+    "softwareImages":[
+      {
+        "resourceId":"cirros",
+        "vnfdSoftwareImageId":"trainingSwImage"
+      }
+    ],
+    "flavourId": "simpliest",
+    "zones": [
+        {
+            "resourceId": "shared-distribution",
+            "id": "destAZ"
+        }
+    ],
+    "extVirtualLinks": [{
+        "extCps": [{
+            "cpdId": "trainingECP"
+        }],
+        "resourceId": "PN-539-SO-Network"
+    }],
+    "vims": [{
+        "id": "VIM-Telus-Laird",
+        "vimInfoType": "OPENSTACK_V3_INFO",
+        "interfaceInfo": {
+          "endpoint": "https://eyrkonaeye20.osc.tac.net:13000/v3"
+        },
+        "accessInfo": {
+          "region": "regionOne",
+          "project": "service-orchestrator",
+          "domain": "Default",
+          "username": "t928948"
+        }
+      }]
+}
